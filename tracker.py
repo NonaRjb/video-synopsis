@@ -28,17 +28,13 @@ class Tracker:
                                 cv2.CHAIN_APPROX_SIMPLE)
         cnts = imutils.grab_contours(cnts)
         if len(self.video) == 0:
-            print('len = 0')
             copy_bg = self.bg.copy()
             cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
             self.video.append(cv2.add(copy_bg, mask))
-            # # cv2.imshow('v', cv2.add(copy_bg, mask))
-            # # cv2.waitKey(0)
         else:
             cv2.fillConvexPoly(self.video[self.objects_seq[self.nextObjectID]], np.squeeze(cnts[0]).astype(int), 0, 16)
-            self.video[self.objects_seq[self.nextObjectID]] = cv2.add(self.video[self.objects_seq[self.nextObjectID]], mask)
-            # cv2.imshow('w', self.video[self.objects_seq[self.nextObjectID]])
-            # cv2.waitKey(0)
+            self.video[self.objects_seq[self.nextObjectID]] = cv2.add(self.video[self.objects_seq[self.nextObjectID]],
+                                                                      mask)
         self.objects_seq[self.nextObjectID] += 1
         self.nextObjectID += 1
 
@@ -52,9 +48,7 @@ class Tracker:
         if len(rects) == 0:
             for objectID in list(self.disappeared.keys()):
                 self.disappeared[objectID] += 1
-                # self.moving_objects[objectID].set_mask(np.zeros_like(frame))
                 self.objects_seq[objectID] += 1
-                # self.video.append(self.bg.copy())
                 if self.disappeared[objectID] > self.maxDisappeared:
                     self.deregister(objectID, frame_num)
 
@@ -92,6 +86,9 @@ class Tracker:
 
                 objectID = objectIDs[row]
                 self.objects[objectID] = inputCentroids[col]
+                for n in range(self.disappeared[objectID]):
+                    self.moving_objects[objectID].copy_centroid()
+                self.moving_objects[objectID].set_centroid(inputCentroids[col])
                 self.disappeared[objectID] = 0
                 mask = np.zeros_like(frame)
                 mask[masks[col][:, :, :] == 255] = frame[masks[col][:, :, :] == 255]
@@ -100,39 +97,19 @@ class Tracker:
                 cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
                                         cv2.CHAIN_APPROX_SIMPLE)
                 cnts = imutils.grab_contours(cnts)
-                print('len(self.video):', len(self.video))
-                print('self.objects_seq[objectID]', self.objects_seq[objectID])
                 if len(self.video)-1 < self.objects_seq[objectID]:
-                    print('1111111')
-
                     while len(self.video) != self.objects_seq[objectID]:
                         self.video.append(self.bg.copy())
-
                     copy_bg = self.bg.copy()
                     cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
                     self.video.append(cv2.add(copy_bg, mask))
-
-                    # cv2.imshow('bg', self.bg)
-                    # cv2.imshow('copy_bg', copy_bg)
-                    # cv2.imshow('mask', mask)
-
-                    # cv2.imshow('v', cv2.add(copy_bg, mask))
-                    # cv2.waitKey(0)
                     self.objects_seq[objectID] += 1
                 elif len(np.squeeze(cnts[0])) > 2: ##### cherrrrt
-                    print('22222')
-                    # print(np.squeeze(cnts[0]).astype(np.int32))
                     cv2.fillConvexPoly(self.video[self.objects_seq[objectID]], np.squeeze(cnts[0]).astype(np.int32), 0)
                     self.video[self.objects_seq[objectID]] = cv2.add(self.video[self.objects_seq[objectID]], mask)
-                    # cv2.imshow('w', self.video[self.objects_seq[objectID]])
-                    # cv2.imshow('bg', self.bg)
-                    # cv2.imshow('mask', mask)
-                    # cv2.waitKey(0)
                     self.objects_seq[objectID] += 1
                 else:
-                    # print(np.squeeze(cnts[0]).astype(np.int32))
                     self.objects_seq[objectID] += 1
-                # self.moving_objects[objectID].set_mask(mask)
 
                 usedRows.add(row)
                 usedCols.add(col)
@@ -145,8 +122,6 @@ class Tracker:
                     objectID = objectIDs[row]
                     self.disappeared[objectID] += 1
                     self.objects_seq[objectID] += 1
-                    # self.video.append(self.bg.copy())
-                    # self.moving_objects[objectID].set_mask(np.zeros_like(frame))
                     if self.disappeared[objectID] > self.maxDisappeared:
                         self.deregister(objectID, frame_num)
 
@@ -159,8 +134,41 @@ class Tracker:
         # return the set of trackable objects
         return self.objects
 
+    def complete_last_frame(self, frame_id):
+        for i in range(len(self.moving_objects)):
+            if self.moving_objects[i].last_frame is None:
+                self.moving_objects[i].set_last_frame(frame_id - 1 - self.disappeared[i])
+                self.moving_objects[i].set_time(self.fps)
+
     def get_moving_objects(self):
         return self.moving_objects
 
     def get_video(self):
         return self.video
+
+    def get_time(self):
+        for i in range(len(self.moving_objects)):
+            print('frame len:', self.moving_objects[i].get_last_frame() - self.moving_objects[i].get_first_frame())
+            print('centroid len:', self.moving_objects[i].get_len_centroid())
+            print('----------------')
+
+    def set_object_times(self):
+        max_frame = len(self.video)
+        objectIDs = range(len(self.moving_objects)-1)
+        video2 = self.video.copy()
+        finished_tracks = []
+        frame_num = 0
+        while frame_num < max_frame:
+            for i in objectIDs:
+                obj = self.moving_objects[i]
+                time = obj.get_time()
+                if frame_num < (obj.get_last_frame()-obj.get_first_frame()):
+                    c = obj.get_centroid(frame_num)
+                    cv2.putText(video2[frame_num], str(round(time, 2)), tuple(c),
+                                cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.4, (0, 0, 0), 1, cv2.LINE_AA)
+                else:
+                    finished_tracks.append(i)
+            objectIDs = [ele for ele in objectIDs if ele not in finished_tracks]
+            frame_num += 1
+        self.video = video2
+

@@ -117,6 +117,10 @@ while True:
 vs.release()
 cv2.destroyAllWindows()
 
+ct.complete_last_frame(frame_id)
+ct.set_object_times()
+# ct.get_time()
+
 '''moving_objects = ct.get_moving_objects()
 for i in range(len(moving_objects)):
     if moving_objects[i].last_frame is None:
