@@ -7,7 +7,7 @@ import imutils
 
 
 class Tracker:
-    def __init__(self, fps, bg, maxDisappeared=50):
+    def __init__(self, fps, bg, maxDisappeared=20):
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.moving_objects = OrderedDict()
@@ -30,7 +30,7 @@ class Tracker:
         if len(self.video) == 0:
             print('len = 0')
             copy_bg = self.bg.copy()
-            cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0, 16)
+            cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
             self.video.append(cv2.add(copy_bg, mask))
             # # cv2.imshow('v', cv2.add(copy_bg, mask))
             # # cv2.waitKey(0)
@@ -54,7 +54,7 @@ class Tracker:
                 self.disappeared[objectID] += 1
                 # self.moving_objects[objectID].set_mask(np.zeros_like(frame))
                 self.objects_seq[objectID] += 1
-                self.video.append(self.bg.copy())
+                # self.video.append(self.bg.copy())
                 if self.disappeared[objectID] > self.maxDisappeared:
                     self.deregister(objectID, frame_num)
 
@@ -104,8 +104,12 @@ class Tracker:
                 print('self.objects_seq[objectID]', self.objects_seq[objectID])
                 if len(self.video)-1 < self.objects_seq[objectID]:
                     print('1111111')
+
+                    while len(self.video) != self.objects_seq[objectID]:
+                        self.video.append(self.bg.copy())
+
                     copy_bg = self.bg.copy()
-                    cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0, 16)
+                    cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
                     self.video.append(cv2.add(copy_bg, mask))
 
                     # cv2.imshow('bg', self.bg)
@@ -141,7 +145,7 @@ class Tracker:
                     objectID = objectIDs[row]
                     self.disappeared[objectID] += 1
                     self.objects_seq[objectID] += 1
-                    self.video.append(self.bg.copy())
+                    # self.video.append(self.bg.copy())
                     # self.moving_objects[objectID].set_mask(np.zeros_like(frame))
                     if self.disappeared[objectID] > self.maxDisappeared:
                         self.deregister(objectID, frame_num)
