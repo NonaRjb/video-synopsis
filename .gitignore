@@ -1,0 +1,11 @@
+.idea
+__pycache__
+Paper resources
+simple-object-tracking
+venv
+*.avi
+*.jpg
+*.pdf
+*.docx
+*.txt
+*.mp4
