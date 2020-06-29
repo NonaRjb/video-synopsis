@@ -4,8 +4,7 @@ import cv2
 import numpy as np
 from tracker import Tracker
 import background
-from moving_object import MovingObject
-from skimage.transform import pyramid_gaussian
+
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-v', '--video', help='path to the video file')
@@ -49,11 +48,11 @@ while True:
     frameDelta = cv2.absdiff(gray_medianFrame, gray)
     thresh = cv2.threshold(frameDelta, 20, 255, cv2.THRESH_BINARY)[1]
     thresh = cv2.medianBlur(thresh, 5)
-    #thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+    # thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
 
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    thresh = cv2.erode(thresh, None, iterations=2)
-    thresh = cv2.dilate(thresh, None, iterations=7)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+    thresh = cv2.erode(thresh, None, iterations=1)
+    thresh = cv2.dilate(thresh, None, iterations=5)
 
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
                             cv2.CHAIN_APPROX_SIMPLE)
@@ -121,24 +120,10 @@ ct.complete_last_frame(frame_id)
 ct.set_object_times()
 # ct.get_time()
 
-'''moving_objects = ct.get_moving_objects()
-for i in range(len(moving_objects)):
-    if moving_objects[i].last_frame is None:
-        moving_objects[i].set_last_frame(frame_id-1)
-        moving_objects[i].set_time(fps)
-
-obj = moving_objects[7]
-mask_obj = obj.get_mask()
-for i in range(len(mask_obj)):
-    cv2.imshow('window', mask_obj[i])
-    cv2.waitKey(20)
-cv2.destroyAllWindows()
-# sometimes gives insufficient memory error more than just sometimes!'''
-
 summarized_video = ct.get_video()
 height, width, _ = summarized_video[0].shape
 size = (width, height)
-out = cv2.VideoWriter('project.avi', cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
+out = cv2.VideoWriter('project1.avi', cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
 
 for i in range(len(summarized_video)):
     out.write(summarized_video[i])

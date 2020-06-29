@@ -46,7 +46,7 @@ class Tracker:
 
     def update(self, rects, masks, frame_num, frame):
         if len(rects) == 0:
-            for objectID in list(self.disappeared.keys()):
+            for objectID in list(self.objects.keys()):
                 self.disappeared[objectID] += 1
                 self.objects_seq[objectID] += 1
                 if self.disappeared[objectID] > self.maxDisappeared:
@@ -117,19 +117,17 @@ class Tracker:
             unusedRows = set(range(0, D.shape[0])).difference(usedRows)
             unusedCols = set(range(0, D.shape[1])).difference(usedCols)
 
-            if D.shape[0] >= D.shape[1]:
-                for row in unusedRows:
-                    objectID = objectIDs[row]
-                    self.disappeared[objectID] += 1
-                    self.objects_seq[objectID] += 1
-                    if self.disappeared[objectID] > self.maxDisappeared:
-                        self.deregister(objectID, frame_num)
+            for row in unusedRows:
+                objectID = objectIDs[row]
+                self.disappeared[objectID] += 1
+                self.objects_seq[objectID] += 1
+                if self.disappeared[objectID] > self.maxDisappeared:
+                    self.deregister(objectID, frame_num)
 
-            else:
-                for col in unusedCols:
-                    mask = np.zeros_like(frame)
-                    mask[masks[col][:, :, :] == 255] = frame[masks[col][:, :, :] == 255]
-                    self.register(inputCentroids[col], frame_num, mask)
+            for col in unusedCols:
+                mask = np.zeros_like(frame)
+                mask[masks[col][:, :, :] == 255] = frame[masks[col][:, :, :] == 255]
+                self.register(inputCentroids[col], frame_num, mask)
 
         # return the set of trackable objects
         return self.objects
@@ -137,7 +135,7 @@ class Tracker:
     def complete_last_frame(self, frame_id):
         for i in range(len(self.moving_objects)):
             if self.moving_objects[i].last_frame is None:
-                self.moving_objects[i].set_last_frame(frame_id - 1 - self.disappeared[i])
+                self.moving_objects[i].set_last_frame(frame_id - self.disappeared[i])
                 self.moving_objects[i].set_time(self.fps)
 
     def get_moving_objects(self):
@@ -148,6 +146,7 @@ class Tracker:
 
     def get_time(self):
         for i in range(len(self.moving_objects)):
+            print('last frame:', self.moving_objects[i].get_last_frame())
             print('frame len:', self.moving_objects[i].get_last_frame() - self.moving_objects[i].get_first_frame())
             print('centroid len:', self.moving_objects[i].get_len_centroid())
             print('----------------')
