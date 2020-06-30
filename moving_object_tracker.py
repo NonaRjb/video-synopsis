@@ -8,6 +8,7 @@ import background
 
 ap = argparse.ArgumentParser()
 ap.add_argument('-v', '--video', help='path to the video file')
+ap.add_argument('-o', '--output', help='path to the output video file')
 args = vars(ap.parse_args())
 
 if args['video'] is None:
@@ -51,8 +52,8 @@ while True:
     # thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
 
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
-    thresh = cv2.erode(thresh, None, iterations=1)
-    thresh = cv2.dilate(thresh, None, iterations=5)
+    thresh = cv2.erode(thresh, None, iterations=1)   # 1 for Video1
+    thresh = cv2.dilate(thresh, None, iterations=5)  # 5 for Video1
 
     cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
                             cv2.CHAIN_APPROX_SIMPLE)
@@ -120,10 +121,15 @@ ct.complete_last_frame(frame_id)
 ct.set_object_times()
 # ct.get_time()
 
+if args['output'] is None:
+    out_file = 'project.avi'
+else:
+    out_file = args['output']
+
 summarized_video = ct.get_video()
 height, width, _ = summarized_video[0].shape
 size = (width, height)
-out = cv2.VideoWriter('project1.avi', cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
+out = cv2.VideoWriter(out_file, cv2.VideoWriter_fourcc(*'DIVX'), fps, size)
 
 for i in range(len(summarized_video)):
     out.write(summarized_video[i])

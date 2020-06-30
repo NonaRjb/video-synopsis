@@ -7,7 +7,7 @@ import imutils
 
 
 class Tracker:
-    def __init__(self, fps, bg, maxDisappeared=20):
+    def __init__(self, fps, bg, maxDisappeared=25):
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.moving_objects = OrderedDict()

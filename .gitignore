@@ -9,3 +9,4 @@ venv
 *.docx
 *.txt
 *.mp4
+test.py
