@@ -17,6 +17,7 @@ class Tracker:
         self.bg = bg
         self.video = []
         self.fps = fps
+        self.alpha = 0.5
 
     def register(self, centroid, frame_num, mask):
         self.moving_objects[self.nextObjectID] = MovingObject(frame_num, centroid)
@@ -32,9 +33,11 @@ class Tracker:
             cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
             self.video.append(cv2.add(copy_bg, mask))
         else:
-            cv2.fillConvexPoly(self.video[self.objects_seq[self.nextObjectID]], np.squeeze(cnts[0]).astype(int), 0, 16)
-            self.video[self.objects_seq[self.nextObjectID]] = cv2.add(self.video[self.objects_seq[self.nextObjectID]],
-                                                                      mask)
+            copy_frame = self.video[self.objects_seq[self.nextObjectID]].copy()
+            cv2.fillConvexPoly(copy_frame, np.squeeze(cnts[0]).astype(int), 0)
+            copy_frame = cv2.add(copy_frame, mask)
+            cv2.addWeighted(copy_frame, self.alpha, self.video[self.objects_seq[self.nextObjectID]], 1 - self.alpha,
+                            0, self.video[self.objects_seq[self.nextObjectID]])
         self.objects_seq[self.nextObjectID] += 1
         self.nextObjectID += 1
 
@@ -105,8 +108,12 @@ class Tracker:
                     self.video.append(cv2.add(copy_bg, mask))
                     self.objects_seq[objectID] += 1
                 elif len(np.squeeze(cnts[0])) > 2: ##### cherrrrt
-                    cv2.fillConvexPoly(self.video[self.objects_seq[objectID]], np.squeeze(cnts[0]).astype(np.int32), 0)
-                    self.video[self.objects_seq[objectID]] = cv2.add(self.video[self.objects_seq[objectID]], mask)
+                    copy_frame = self.video[self.objects_seq[objectID]].copy()
+                    cv2.fillConvexPoly(copy_frame, np.squeeze(cnts[0]).astype(np.int32), 0)
+                    copy_frame = cv2.add(copy_frame, mask)
+                    cv2.addWeighted(copy_frame, self.alpha, self.video[self.objects_seq[objectID]],
+                                    1 - self.alpha,
+                                    0, self.video[self.objects_seq[objectID]])
                     self.objects_seq[objectID] += 1
                 else:
                     self.objects_seq[objectID] += 1
