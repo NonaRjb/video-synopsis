@@ -7,7 +7,7 @@ import imutils
 
 
 class Tracker:
-    def __init__(self, fps, bg, maxDisappeared=25):
+    def __init__(self, fps, bg, maxDisappeared=20):
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.moving_objects = OrderedDict()
@@ -143,13 +143,6 @@ class Tracker:
 
     def get_video(self):
         return self.video
-
-    def get_time(self):
-        for i in range(len(self.moving_objects)):
-            print('last frame:', self.moving_objects[i].get_last_frame())
-            print('frame len:', self.moving_objects[i].get_last_frame() - self.moving_objects[i].get_first_frame())
-            print('centroid len:', self.moving_objects[i].get_len_centroid())
-            print('----------------')
 
     def set_object_times(self):
         max_frame = len(self.video)

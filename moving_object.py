@@ -13,7 +13,7 @@ class MovingObject:
 
     def set_time(self, fps):
         if self.last_frame is not None:
-            self.time = (self.last_frame - self.first_frame) / fps
+            self.time = (self.last_frame - self.first_frame + 1) / fps
 
     def set_last_frame(self, last_frame_num):
         self.last_frame = last_frame_num

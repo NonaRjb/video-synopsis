@@ -10,3 +10,4 @@ venv
 *.txt
 *.mp4
 test.py
+*.tmp
