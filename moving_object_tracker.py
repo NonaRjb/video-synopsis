@@ -11,6 +11,7 @@ import time
 ap = argparse.ArgumentParser()
 ap.add_argument('-v', '--video', help='path to the video file')
 ap.add_argument('-o', '--output', help='path to the output video file')
+ap.add_argument('-md', help='maximum number of frames that an object can be disappeared')
 args = vars(ap.parse_args())
 
 if args['video'] is None:
@@ -29,7 +30,10 @@ else:
 # get frame per second (fps) of input video
 fps = vs.get(cv2.CAP_PROP_FPS)
 # initialize an object from Tracker class
-ct = Tracker(fps, bg)   # max_disappeared = 20 for Video1 & 25 for Video2
+if args['md'] is None:
+    ct = Tracker(fps, bg)   # max_disappeared = 20 for Video1 & 25 for Video2
+else:
+    ct = Tracker(fps, bg, int(args['md']))
 frame_id = 0
 
 while True:

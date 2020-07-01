@@ -18,6 +18,8 @@ class Tracker:
         self.video = []
         self.fps = fps
         self.alpha = 0.5
+        self.binary_frames = []
+        self.intersection_thresh = 70
 
     def register(self, centroid, frame_num, mask):
         self.moving_objects[self.nextObjectID] = MovingObject(frame_num, centroid)
@@ -32,12 +34,24 @@ class Tracker:
             copy_bg = self.bg.copy()
             cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
             self.video.append(cv2.add(copy_bg, mask))
+            self.binary_frames.append(thresh)
         else:
-            copy_frame = self.video[self.objects_seq[self.nextObjectID]].copy()
-            cv2.fillConvexPoly(copy_frame, np.squeeze(cnts[0]).astype(int), 0)
-            copy_frame = cv2.add(copy_frame, mask)
-            cv2.addWeighted(copy_frame, self.alpha, self.video[self.objects_seq[self.nextObjectID]], 1 - self.alpha,
-                            0, self.video[self.objects_seq[self.nextObjectID]])
+            intersection = cv2.bitwise_and(thresh, self.binary_frames[self.objects_seq[self.nextObjectID]])
+            if np.count_nonzero(intersection) > self.intersection_thresh:
+                copy_frame = self.video[self.objects_seq[self.nextObjectID]].copy()
+                cv2.fillConvexPoly(copy_frame, np.squeeze(cnts[0]).astype(int), 0)
+                copy_frame = cv2.add(copy_frame, mask)
+                cv2.addWeighted(copy_frame, self.alpha, self.video[self.objects_seq[self.nextObjectID]], 1 - self.alpha,
+                                0, self.video[self.objects_seq[self.nextObjectID]])
+            else:
+                cv2.fillConvexPoly(self.video[self.objects_seq[self.nextObjectID]], np.squeeze(cnts[0]).astype(int), 0)
+                self.video[self.objects_seq[self.nextObjectID]] = cv2.add(mask,
+                                                                          self.video[
+                                                                              self.objects_seq[self.nextObjectID]])
+            self.binary_frames[self.objects_seq[self.nextObjectID]] = cv2.bitwise_or(thresh,
+                                                                                     self.binary_frames[
+                                                                                         self.objects_seq[
+                                                                                             self.nextObjectID]])
         self.objects_seq[self.nextObjectID] += 1
         self.nextObjectID += 1
 
@@ -103,17 +117,29 @@ class Tracker:
                 if len(self.video)-1 < self.objects_seq[objectID]:
                     while len(self.video) != self.objects_seq[objectID]:
                         self.video.append(self.bg.copy())
+                        self.binary_frames.append(np.zeros_like(thresh))
                     copy_bg = self.bg.copy()
                     cv2.fillConvexPoly(copy_bg, np.squeeze(cnts[0]).astype(int), 0)
                     self.video.append(cv2.add(copy_bg, mask))
+                    self.binary_frames.append(thresh)
                     self.objects_seq[objectID] += 1
-                elif len(np.squeeze(cnts[0])) > 2: ##### cherrrrt
-                    copy_frame = self.video[self.objects_seq[objectID]].copy()
-                    cv2.fillConvexPoly(copy_frame, np.squeeze(cnts[0]).astype(np.int32), 0)
-                    copy_frame = cv2.add(copy_frame, mask)
-                    cv2.addWeighted(copy_frame, self.alpha, self.video[self.objects_seq[objectID]],
-                                    1 - self.alpha,
-                                    0, self.video[self.objects_seq[objectID]])
+                elif len(np.squeeze(cnts[0])) > 2:
+                    intersection = cv2.bitwise_and(thresh, self.binary_frames[self.objects_seq[objectID]])
+                    if np.count_nonzero(intersection) > self.intersection_thresh:
+                        copy_frame = self.video[self.objects_seq[objectID]].copy()
+                        cv2.fillConvexPoly(copy_frame, np.squeeze(cnts[0]).astype(np.int32), 0)
+                        copy_frame = cv2.add(copy_frame, mask)
+                        cv2.addWeighted(copy_frame, self.alpha, self.video[self.objects_seq[objectID]],
+                                        1 - self.alpha,
+                                        0, self.video[self.objects_seq[objectID]])
+                    else:
+                        cv2.fillConvexPoly(self.video[self.objects_seq[objectID]], np.squeeze(cnts[0]).astype(np.int32),
+                                           0)
+                        self.video[self.objects_seq[objectID]] = cv2.add(mask,
+                                                                         self.video[self.objects_seq[objectID]])
+                    self.binary_frames[self.objects_seq[objectID]] = cv2.bitwise_or(thresh,
+                                                                                    self.binary_frames[
+                                                                                        self.objects_seq[objectID]])
                     self.objects_seq[objectID] += 1
                 else:
                     self.objects_seq[objectID] += 1
