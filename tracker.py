@@ -186,11 +186,11 @@ class Tracker:
         while frame_num < max_frame:
             for i in objectIDs:
                 obj = self.moving_objects[i]
-                time = obj.get_time()
+                time = obj.get_time(frame_num, self.fps)
                 if frame_num < (obj.get_last_frame()-obj.get_first_frame()):
                     c = obj.get_centroid(frame_num)
                     cv2.putText(video2[frame_num], str(round(time, 2)), tuple(c),
-                                cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.4, (0, 0, 0), 1, cv2.LINE_AA)
+                                cv2.FONT_ITALIC, 0.2, (0, 0, 0), 1, cv2.LINE_AA)
                 else:
                     finished_tracks.append(i)
             objectIDs = [ele for ele in objectIDs if ele not in finished_tracks]
